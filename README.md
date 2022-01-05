@@ -8,15 +8,9 @@ Edit the created `.env` file and set its properties:
 
 # Requirements
 ```bash
-$ pip install graphviz
-$ apt install graphviz
+$ pip install .
 ```
-```bash
-$ pip install python-dotenv
-```
-```bash
-$ pip install jira
-```
+Run this in the project's root folder. Pip will execute `setup.py` and install defined dependencies
 
 # Execution
 ```bash

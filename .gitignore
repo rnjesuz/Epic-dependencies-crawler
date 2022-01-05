@@ -1,3 +1,4 @@
 .env
 .idea
 epic_dependencies_graph*
+epic_dependency_crawler.egg-info
