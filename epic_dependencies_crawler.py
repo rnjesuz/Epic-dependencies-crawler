@@ -9,6 +9,7 @@ from PyQt5.QtCore import QObject, QThread, QSize, pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QLabel, QLineEdit
 from dotenv import load_dotenv, set_key
 from jira import JIRA
+from pathlib import Path
 
 global server
 global jira_username
@@ -17,6 +18,9 @@ global provided_epic_issue
 global jira
 epics = {}
 digraph = graphviz.Digraph(filename='epic_dependencies_graph', format='png')
+
+env_file = Path('.env')
+env_file.touch(exist_ok=True)
 
 
 class Issue:
