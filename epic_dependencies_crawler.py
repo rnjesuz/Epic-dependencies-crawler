@@ -2,14 +2,13 @@ import os
 import platform
 import subprocess
 import sys
+from pathlib import Path
 
 import graphviz
-from PyQt5 import QtWidgets
 from PyQt5.QtCore import QObject, QThread, QSize, pyqtSignal
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QLabel, QLineEdit
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QWidget, QFormLayout
 from dotenv import load_dotenv, set_key
 from jira import JIRA
-from pathlib import Path
 
 global server
 global jira_username
@@ -37,7 +36,7 @@ class Epic:
 
 
 class Window(QMainWindow):
-    def __init__(self, server, jira_username, jira_api_token, provided_epic_issue):
+    def __init__(self):
         QMainWindow.__init__(self)
 
         self.worker = Worker()
@@ -45,43 +44,48 @@ class Window(QMainWindow):
         self.setMinimumSize(QSize(330, 200))
         self.setWindowTitle("Jira Dependencies Crawler")
 
+        self._init_ui()
+
+    def _init_ui(self):
+
+        self.central_widget = QWidget(self)
+        self.setCentralWidget(self.central_widget)
+        self.layout = QFormLayout(self.central_widget)
+
         self.serverLabel = QLabel(self)
         self.serverLabel.setText('Server URL:')
-        self.serverLabel.move(20, 20)
         self.serverLine = QLineEdit(self)
-        self.serverLine.move(110, 25)
-        self.serverLine.resize(200, 20)
         self.serverLine.setText(server)
 
         self.usernameLabel = QLabel(self)
         self.usernameLabel.setText('Email:')
-        self.usernameLabel.move(20, 45)
         self.usernameLine = QLineEdit(self)
-        self.usernameLine.move(110, 50)
-        self.usernameLine.resize(200, 20)
         self.usernameLine.setText(jira_username)
 
         self.tokenLabel = QLabel(self)
         self.tokenLabel.setText('API Token:')
-        self.tokenLabel.move(20, 70)
         self.tokenLine = QLineEdit(self)
         self.tokenLine.setEchoMode(QLineEdit.Password)
-        self.tokenLine.move(110, 75)
-        self.tokenLine.resize(200, 20)
         self.tokenLine.setText(jira_api_token)
 
         self.epicLabel = QLabel(self)
         self.epicLabel.setText('Epic\'s issue:')
-        self.epicLabel.move(20, 95)
         self.epicLine = QLineEdit(self)
-        self.epicLine.move(110, 100)
-        self.epicLine.resize(200, 20)
         self.epicLine.setText(provided_epic_issue)
 
         self.button = QPushButton('Start', self)
         self.button.clicked.connect(self.start_processing)
-        self.button.resize(200,32)
-        self.button.move(65, 150)
+
+        self.layout.addRow(self.serverLabel)
+        self.layout.addRow(self.serverLine)
+        self.layout.addRow(self.usernameLabel)
+        self.layout.addRow(self.usernameLine)
+        self.layout.addRow(self.tokenLabel)
+        self.layout.addRow(self.tokenLine)
+        self.layout.addRow(self.epicLabel)
+        self.layout.addRow(self.epicLine)
+        self.layout.addRow("   ", None)
+        self.layout.addRow(self.button)
 
     def server_value(self):
         return self.serverLine.text()
@@ -119,6 +123,8 @@ class Window(QMainWindow):
         provided_epic_issue = self.epic_value()
         set_key('.env', "EPIC_ISSUE", provided_epic_issue)
 
+        self.disable_button()
+
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.finished.connect(self.thread.quit)
@@ -126,7 +132,6 @@ class Window(QMainWindow):
         self.thread.finished.connect(self.thread.deleteLater)
         self.thread.start()
 
-        self.disable_button()
         self.thread.finished.connect(
             # lambda: self.enable_button()
             lambda: exit(0)
@@ -153,8 +158,9 @@ def main():
     global provided_epic_issue
     provided_epic_issue = os.getenv('EPIC_ISSUE')
 
-    app = QtWidgets.QApplication(sys.argv)
-    window = Window(server, jira_username, jira_api_token, provided_epic_issue)
+    app = QApplication(sys.argv)
+    window = Window()
+
     window.show()
     sys.exit(app.exec())
 
@@ -170,7 +176,12 @@ def build_dependencies():
 
     epic_dependencies = {}
     for issue_in_epic in issues_in_epic:
-        issue = Issue(issue_in_epic.fields.status.name, issue_in_epic.key, get_epic_issue_from_issue(issue_in_epic))
+        issue = \
+            Issue(
+                issue_in_epic.fields.status.name,
+                issue_in_epic.key,
+                get_epic_issue_from_issue(issue_in_epic)
+            )
 
         epic_dependencies[issue] = []
         blocked_issues = jira.search_issues("issueIsBlockedBy = " + issue_in_epic.key)
