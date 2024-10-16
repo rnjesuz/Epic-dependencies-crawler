@@ -212,11 +212,11 @@ def open_image():
 
 
 def get_epic_title_from_epic_issue(epic_issue):
-    return jira.issue(epic_issue, fields='customfield_10011').fields.customfield_10011
+    return jira.issue(epic_issue, fields='summary').fields.summary
 
 
 def get_epic_issue_from_issue(issue):
-    return issue.fields.customfield_10014
+    return issue.fields.parent.key
 
 
 def build_epics(provided_epic_title, dependencies):
